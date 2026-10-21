@@ -11,7 +11,7 @@ import Register from '../pages/Register.vue';
 import Dashboard from '../pages/Dashboard.vue';
 import Reports from '../pages/Reports.vue';
 import Profile from '../pages/Profile.vue';
-import Admin from '../pages/Admin.vue';
+import Budgets from '../pages/Budgets.vue';
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -54,15 +54,14 @@ const router = createRouter({
           component: Reports,
         },
         {
+          path: 'budgets',
+          name: 'budgets',
+          component: Budgets,
+        },
+        {
           path: 'profile',
           name: 'profile',
           component: Profile,
-        },
-        {
-          path: 'admin',
-          name: 'admin',
-          component: Admin,
-          meta: { requiresAdmin: true },
         },
       ],
     },
@@ -74,26 +73,17 @@ const router = createRouter({
 });
 
 // Navigation Guards
-router.beforeEach(async (to, from, next) => {
+router.beforeEach(async (to) => {
   const authStore = useAuthStore();
 
-  // If token exists but user object is null, try to retrieve profile
-  if (authStore.token && !authStore.user) {
-    await authStore.fetchCurrentUser();
-  }
+  await authStore.ready
 
   const authenticated = authStore.isAuthenticated;
-  const adminUser = authStore.isAdmin;
 
   if (to.meta.requiresAuth && !authenticated) {
-    next({ name: 'login' });
+    return { name: 'login' };
   } else if (to.meta.guestOnly && authenticated) {
-    next({ name: 'dashboard' });
-  } else if (to.meta.requiresAdmin && !adminUser) {
-    // If user is not admin, send back to dashboard
-    next({ name: 'dashboard' });
-  } else {
-    next();
+    return { name: 'dashboard' };
   }
 });
 

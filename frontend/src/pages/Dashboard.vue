@@ -157,7 +157,7 @@ function handleFilterTransactions(filters: { type: string; category: string }) {
   txStore.fetchTransactions(filters);
 }
 
-async function handleDeleteTransaction(id: number) {
+async function handleDeleteTransaction(id: string) {
   const ok = await txStore.deleteTransaction(id);
   if (ok) {
     budgetStore.fetchBudgetStatus();
@@ -165,7 +165,7 @@ async function handleDeleteTransaction(id: number) {
 }
 
 async function handleEditTransaction(
-  id: number,
+  id: string,
   data: { description: string; amount: number; type: 'income' | 'expense'; category: string; date: string }
 ) {
   const ok = await txStore.updateTransaction(id, data);

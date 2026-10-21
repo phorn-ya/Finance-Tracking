@@ -1,98 +1,129 @@
-import { defineStore } from 'pinia';
-import { ref, computed } from 'vue';
-import { budgetApi } from '../api/budgetApi';
+import { computed, ref } from 'vue'
+import { defineStore } from 'pinia'
+import { useAuthStore } from './authStore'
+import {
+  getBudgetStatus as readBudgetStatus,
+  getBudgets as readBudgets,
+  removeBudget,
+  saveBudget as writeBudget,
+} from '../services/financeService'
 
 export interface Budget {
-  id: number;
-  user_id: number;
-  category: string;
-  amount_limit: number;
-  period: string;
-  created_at: string;
+  id: string
+  user_id: string
+  category: string
+  amount_limit: number
+  period: string
+  created_at: string
 }
 
 export interface BudgetStatusItem {
-  category: string;
-  limit: number;
-  spent: number;
-  remaining: number;
-  percentage: number;
-  isOverBudget: boolean;
+  category: string
+  limit: number
+  spent: number
+  remaining: number
+  percentage: number
+  isOverBudget: boolean
 }
 
 export const useBudgetStore = defineStore('budget', () => {
-  const budgets = ref<Budget[]>([]);
-  const budgetStatus = ref<BudgetStatusItem[]>([]);
-  const loading = ref(false);
-  const error = ref<string | null>(null);
+  const authStore = useAuthStore()
+  const budgets = ref<Budget[]>([])
+  const budgetStatus = ref<BudgetStatusItem[]>([])
+  const loading = ref(false)
+  const error = ref<string | null>(null)
 
   const notifications = computed(() => {
-    const list: string[] = [];
-    budgetStatus.value.forEach((b) => {
-      if (b.isOverBudget) {
-        list.push(`🚨 Budget Exceeded: You have spent $${b.spent.toFixed(2)} of your $${b.limit.toFixed(2)} limit for '${b.category}'`);
-      } else if (b.percentage >= 80) {
-        list.push(`⚠️ Budget Warning: Spent ${b.percentage.toFixed(0)}% of your $${b.limit.toFixed(2)} limit for '${b.category}'`);
+    const list: string[] = []
+    budgetStatus.value.forEach((budget) => {
+      if (budget.isOverBudget) {
+        list.push(
+          `🚨 Budget Exceeded: You have spent $${budget.spent.toFixed(2)} of your $${budget.limit.toFixed(2)} limit for '${budget.category}'`,
+        )
+      } else if (budget.percentage >= 80) {
+        list.push(
+          `⚠️ Budget Warning: Spent ${budget.percentage.toFixed(0)}% of your $${budget.limit.toFixed(2)} limit for '${budget.category}'`,
+        )
       }
-    });
-    return list;
-  });
+    })
+    return list
+  })
 
   async function fetchBudgets() {
-    loading.value = true;
-    error.value = null;
+    const uid = authStore.user?.id
+    if (!uid) {
+      budgets.value = []
+      return
+    }
+    loading.value = true
+    error.value = null
     try {
-      const res = await budgetApi.getBudgets();
-      budgets.value = res.data;
-    } catch (err: any) {
-      error.value = err.response?.data?.error || 'Failed to fetch budgets.';
+      budgets.value = await readBudgets(uid)
+    } catch (err) {
+      error.value = 'Failed to fetch budgets.'
+      console.error('Failed to fetch Firebase budgets:', err)
     } finally {
-      loading.value = false;
+      loading.value = false
     }
   }
 
   async function fetchBudgetStatus(month?: string) {
-    loading.value = true;
-    error.value = null;
+    const uid = authStore.user?.id
+    if (!uid) {
+      budgetStatus.value = []
+      return
+    }
+    loading.value = true
+    error.value = null
     try {
-      const res = await budgetApi.getBudgetStatus(month);
-      budgetStatus.value = res.data;
-    } catch (err: any) {
-      error.value = err.response?.data?.error || 'Failed to fetch budget status.';
+      budgetStatus.value = await readBudgetStatus(uid, month)
+    } catch (err) {
+      error.value = 'Failed to fetch budget status.'
+      console.error('Failed to fetch Firebase budget status:', err)
     } finally {
-      loading.value = false;
+      loading.value = false
     }
   }
 
   async function saveBudget(category: string, limit: number) {
-    loading.value = true;
-    error.value = null;
+    const uid = authStore.user?.id
+    if (!uid) {
+      error.value = 'Sign in to save a budget.'
+      return false
+    }
+    loading.value = true
+    error.value = null
     try {
-      await budgetApi.setBudget(category, limit);
-      await fetchBudgets();
-      await fetchBudgetStatus();
-      return true;
-    } catch (err: any) {
-      error.value = err.response?.data?.error || 'Failed to save budget.';
-      return false;
+      await writeBudget(uid, category, limit)
+      await Promise.all([fetchBudgets(), fetchBudgetStatus()])
+      return true
+    } catch (err) {
+      error.value = 'Failed to save budget.'
+      console.error('Failed to save Firebase budget:', err)
+      return false
     } finally {
-      loading.value = false;
+      loading.value = false
     }
   }
 
   async function deleteBudget(category: string) {
-    loading.value = true;
-    error.value = null;
+    const uid = authStore.user?.id
+    if (!uid) {
+      error.value = 'Sign in to delete a budget.'
+      return false
+    }
+    loading.value = true
+    error.value = null
     try {
-      await budgetApi.deleteBudget(category);
-      await fetchBudgets();
-      await fetchBudgetStatus();
-      return true;
-    } catch (err: any) {
-      error.value = err.response?.data?.error || 'Failed to delete budget.';
-      return false;
+      await removeBudget(uid, category)
+      await Promise.all([fetchBudgets(), fetchBudgetStatus()])
+      return true
+    } catch (err) {
+      error.value = 'Failed to delete budget.'
+      console.error('Failed to delete Firebase budget:', err)
+      return false
     } finally {
-      loading.value = false;
+      loading.value = false
     }
   }
 
@@ -106,5 +137,5 @@ export const useBudgetStore = defineStore('budget', () => {
     fetchBudgetStatus,
     saveBudget,
     deleteBudget,
-  };
-});
+  }
+})

@@ -21,7 +21,7 @@
           </div>
           <div class="overflow-hidden">
             <h4 class="font-semibold text-white text-sm truncate leading-tight">{{ user?.name }}</h4>
-            <span class="text-xs text-indigo-400 capitalize font-medium">{{ user?.role }}</span>
+            <span class="text-xs text-indigo-400 font-medium">Personal account</span>
           </div>
         </div>
       </div>
@@ -42,19 +42,6 @@
           <span>{{ link.label }}</span>
         </router-link>
 
-        <!-- Admin specific link -->
-        <router-link
-          v-if="isAdmin"
-          to="/admin"
-          class="flex items-center gap-3 px-4 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 mt-6 pt-4 border-t border-slate-800/60"
-          :class="isActiveRoute('/admin') 
-            ? 'bg-violet-600 text-white shadow-md shadow-violet-600/10' 
-            : 'hover:bg-slate-800/80 hover:text-slate-100 text-slate-400'"
-          @click="closeSidebarOnMobile"
-        >
-          <component :is="adminLink.icon" class="w-5 h-5 flex-shrink-0" />
-          <span>{{ adminLink.label }}</span>
-        </router-link>
       </nav>
 
       <!-- Logout Button (Sidebar) -->
@@ -167,15 +154,7 @@ import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '../stores/authStore';
 import { useBudgetStore } from '../stores/budgetStore';
-import { 
-  LayoutDashboard, 
-  BarChart3, 
-  User, 
-  ShieldAlert, 
-  LogOut, 
-  Menu, 
-  Bell 
-} from 'lucide-vue-next';
+import { LayoutDashboard, BarChart3, User, LogOut, Menu, Bell, Wallet } from 'lucide-vue-next';
 
 const route = useRoute();
 const router = useRouter();
@@ -183,7 +162,6 @@ const authStore = useAuthStore();
 const budgetStore = useBudgetStore();
 
 const user = computed(() => authStore.user);
-const isAdmin = computed(() => authStore.isAdmin);
 
 const userInitial = computed(() => {
   if (!user.value?.name) return 'U';
@@ -207,10 +185,10 @@ const currentRouteName = computed(() => {
 const navLinks = [
   { name: 'dashboard', label: 'Dashboard', to: '/dashboard', icon: LayoutDashboard },
   { name: 'reports', label: 'Reports', to: '/reports', icon: BarChart3 },
+  { name: 'budgets', label: 'Budgets', to: '/budgets', icon: Wallet },
   { name: 'profile', label: 'Profile', to: '/profile', icon: User },
 ];
 
-const adminLink = { name: 'admin', label: 'Admin Panel', to: '/admin', icon: ShieldAlert };
 
 function toggleSidebar() {
   isSidebarOpen.value = !isSidebarOpen.value;
@@ -229,7 +207,7 @@ function isActiveRoute(path: string) {
 }
 
 function handleLogout() {
-  authStore.logout();
+  void authStore.logout();
   router.push('/auth/login');
 }
 </script>

@@ -14,10 +14,10 @@
     <div v-if="budgetStatus.length === 0" class="py-8 text-center">
       <p class="text-slate-400 text-sm font-medium">No category budget limits configured yet.</p>
       <router-link 
-        to="/profile" 
+        to="/budgets" 
         class="text-indigo-600 hover:underline font-bold text-xs mt-2 inline-block"
       >
-        Configure limits in profile →
+        Create a budget →
       </router-link>
     </div>
 

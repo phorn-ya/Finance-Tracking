@@ -29,6 +29,31 @@ See [Vite Configuration Reference](https://vite.dev/config/).
 npm install
 ```
 
+### Environment variables
+
+Copy `.env.example` to `.env.local` and fill in your Firebase web app
+configuration. Firebase Authentication and Cloud Firestore are used directly
+from the frontend; Analytics is initialized only when the browser supports it.
+Enable Email/Password sign-in and create a Firestore database in the Firebase
+console before using the app. To use the Google button, enable Google as a
+sign-in provider and add your local and deployed hostnames to Firebase
+Authentication's authorized domains.
+
+Firebase Authentication uses session-only persistence, so signing in does not
+keep the login active after the browser session ends. The app does not store
+finance records in browser local storage; transactions and budgets are stored
+in Cloud Firestore.
+
+The Firebase web configuration is client-visible; do not put service-account
+keys or other privileged credentials in frontend env variables. Apply the
+Firestore rules in `firestore.rules` before deploying. Firebase Hosting serves
+the built frontend files, so provide the `VITE_FIREBASE_*` values in the
+deployment build environment.
+
+Manage monthly category limits from the **Budgets** page. Budgets are saved at
+`users/{uid}/budgets/{category}` and their progress is calculated from that
+user's expense transactions for the current month.
+
 ### Compile and Hot-Reload for Development
 
 ```sh

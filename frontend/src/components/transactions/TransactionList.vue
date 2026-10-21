@@ -197,7 +197,7 @@ import { ref } from 'vue';
 import { Edit, Trash2, X } from 'lucide-vue-next';
 
 interface Transaction {
-  id: number;
+  id: string;
   description: string;
   amount: number;
   type: 'income' | 'expense';
@@ -212,8 +212,8 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   filter: [filters: { type: string; category: string }];
-  delete: [id: number];
-  edit: [id: number, data: { description: string; amount: number; type: 'income' | 'expense'; category: string; date: string }];
+  delete: [id: string];
+  edit: [id: string, data: { description: string; amount: number; type: 'income' | 'expense'; category: string; date: string }];
 }>();
 
 const localType = ref('all');
@@ -252,7 +252,7 @@ function formatDate(dateStr: string) {
   }
 }
 
-function confirmDelete(id: number) {
+function confirmDelete(id: string) {
   if (window.confirm('Are you sure you want to delete this transaction record?')) {
     emit('delete', id);
   }
@@ -260,7 +260,7 @@ function confirmDelete(id: number) {
 
 // Edit Modal Logic
 const isEditModalOpen = ref(false);
-const activeEditId = ref<number | null>(null);
+const activeEditId = ref<string | null>(null);
 const editForm = ref({
   description: '',
   amount: 0,

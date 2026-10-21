@@ -94,7 +94,8 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
 import { Download } from 'lucide-vue-next';
-import reportApi from '../api/reportApi';
+import { useAuthStore } from '../stores/authStore'
+import { getCategoryBreakdown, getMonthlyTrend, getTransactions, toCsv } from '../services/financeService'
 
 // Components
 import BarChart from '../components/charts/BarChart.vue';
@@ -103,6 +104,7 @@ import DoughnutChart from '../components/charts/DoughnutChart.vue';
 const breakdownType = ref<'income' | 'expense'>('expense');
 const categoryItems = ref<{ name: string; value: number }[]>([]);
 const monthlyTrends = ref<{ month: string; income: number; expenses: number }[]>([]);
+const authStore = useAuthStore()
 
 const totalBreakdownSum = computed(() => {
   return categoryItems.value.reduce((sum, item) => sum + item.value, 0);
@@ -196,8 +198,8 @@ onMounted(() => {
 
 async function fetchBreakdown() {
   try {
-    const res = await reportApi.getCategoryBreakdown(breakdownType.value);
-    categoryItems.value = res.data;
+    if (!authStore.user) return
+    categoryItems.value = await getCategoryBreakdown(authStore.user.id, breakdownType.value)
   } catch (err) {
     console.error('Failed to fetch breakdown:', err);
   }
@@ -205,8 +207,8 @@ async function fetchBreakdown() {
 
 async function fetchTrend() {
   try {
-    const res = await reportApi.getMonthlyTrend();
-    monthlyTrends.value = res.data;
+    if (!authStore.user) return
+    monthlyTrends.value = await getMonthlyTrend(authStore.user.id)
   } catch (err) {
     console.error('Failed to fetch trends:', err);
   }
@@ -214,14 +216,16 @@ async function fetchTrend() {
 
 async function handleExportCsv() {
   try {
-    const res = await reportApi.exportCsv();
-    const url = window.URL.createObjectURL(new Blob([res.data]));
+    if (!authStore.user) return
+    const transactions = await getTransactions(authStore.user.id)
+    const url = window.URL.createObjectURL(new Blob([toCsv(transactions)], { type: 'text/csv' }));
     const link = document.createElement('a');
     link.href = url;
     link.setAttribute('download', `transactions_report_${new Date().toISOString().substring(0, 10)}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    window.URL.revokeObjectURL(url)
   } catch (err) {
     console.error('Failed to export CSV:', err);
   }
